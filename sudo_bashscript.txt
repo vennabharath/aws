@@ -1,0 +1,52 @@
+Pass the sudo password in bash script
+-------------------------------------
+
+use the -S switch which reads the password from STDIN:
+
+$echo <password> | sudo -S <command>
+So for your case it would look like this:
+
+$./configure && make && echo <password> | sudo -S make install && halt
+of course, replace <password> with your password.
+
+If you put your password into a command-line parameter, then it will be visible to all in the output of ps. Better to put it in a file and use indirection (sudo -S -v <FILE), or use here strings if bash is your shell (sudo -S -v <<<'<your_password>')
+
+You could also configure sudo with visudo to allow you user to use make as sudo without password.
+
+User_Alias USERS = your_user
+Cmnd_Alias CMDS = /usr/bin/make
+USERS ALL = (ALL) NOPASSWD: CMDS
+
+I figured out no need to declare aliases. Add my_user ALL=(ALL) NOPASSWD: /usr/bin/your_command
+
+I might also add a sleep 60 before the halt command. I've sometimes done things like this, expecting the command to run for a long time, but something goes wrong and it terminates immediately; the sleep lets me kill the command before the system shuts down. Or you can use shutdown with a time argument.
+
+$ echo "<your_password>" | sudo -S -v
+$ sudo whoami
+
+AutoSuDo=$" $echo pass | sudo -S";
+# Change AutoSuDo to something else.
+# Note that string starts with space,
+# useful only if used as first command in line
+In that way I can easily use mine variable instead of sudo,
+
+$AutoSuDo apt-get update;
+echo -e 'password\npassword\n' | sudo passwd root
+
+
+Use the sudo command in the script.
+
+In the form:
+
+sudo -u username command
+
+I would recommend using visudo to give the permissions you need as precisely as you can. Type visudo and add a line like:
+
+username hostname = NOPASSWD: /full/path/to/command1, full/path/to/command2
+If you do need to run this same thing on many hosts, you could open it up with:
+
+username ALL = NOPASSWD: /full/path/to/command1, full/path/to/command2
+But I would **not* use either:
+
+username ALL=(ALL) NOPASSWD: ALL
+
